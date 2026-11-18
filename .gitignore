@@ -1,0 +1,11 @@
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+/notes.md
+/.npm-cache/
+/.review-checks/
