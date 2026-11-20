@@ -98,7 +98,7 @@ The subshell preserves the parent terminal environment even when the CLI fails. 
 
 **Interactive sign-in.** Run `/connect`, choose the provider and complete its API-key or OAuth flow. Then select a model in `/models`. V2 saves keys and OAuth tokens in the server’s SQLite database (usually `~/.local/share/opencode/opencode.db` for the local release build). Use `opencode debug paths db` to find the local path. Remove a saved account in `/connect` or with `opencode auth logout`. Revoking a key at the provider and deleting it from Keychain are separate actions. For environment-only use, skip interactive key entry. Keep plaintext keys out of command arguments, shell history, profiles, `.env` files and Git. [V2 credential storage](https://opencode.ai/docs/cli/providers/#storage)
 
-To explicitly map environment variables to catalog providers, use the V2 `providers` map in the project’s `opencode.json`. Keep the entries you need. These examples refer to standard API keys. Use the provider and settings for your plan. [V2 providers](https://opencode.ai/docs/providers/) · [V2 migration reference](https://opencode.ai/docs/migrate-v1/#providers)
+To explicitly map environment variables to catalog providers, use the V2 `providers` map in the project’s `opencode.json`. Keep the entries you need. Keep the provider that matches your key. OpenCode can detect the built-in providers’ supported environment variables without these explicit mappings. [V2 providers](https://opencode.ai/docs/providers/) · [V2 migration reference](https://opencode.ai/docs/migrate-v1/#providers)
 
 ```json
 {
@@ -106,6 +106,7 @@ To explicitly map environment variables to catalog providers, use the V2 `provid
   "providers": {
     "deepseek": { "settings": { "apiKey": "{env:DEEPSEEK_API_KEY}" } },
     "zai": { "settings": { "apiKey": "{env:ZAI_API_KEY}" } },
+    "kimi-code-plan-global": { "settings": { "apiKey": "{env:KIMI_API_KEY}" } },
     "moonshotai": { "settings": { "apiKey": "{env:MOONSHOT_API_KEY}" } },
     "openai": { "settings": { "apiKey": "{env:OPENAI_API_KEY}" } }
   }
@@ -147,15 +148,38 @@ Documentation: [docs.z.ai](https://docs.z.ai/).
 
 ## 5. Connect Kimi / Moonshot
 
-Step 1. Create an API key at [Moonshot AI Platform](https://platform.moonshot.ai/) (check availability and regions with the provider). Store it in Keychain as `opencode-kimi`.
+Moonshot AI offers both services under the Kimi brand. Use the site where you created the key to choose the provider in OpenCode. [Official API comparison](https://www.kimi.com/en/help/kimi-code/faq)
 
-Step 2. Run:
+| Key source | Billing | OpenCode provider | Environment variable | Global API base URL |
+| --- | --- | --- | --- | --- |
+| [Kimi API Platform](https://platform.kimi.ai/console/api-keys) | Pay-as-you-go | **Moonshot AI** (`moonshotai`) | `MOONSHOT_API_KEY` | `https://api.moonshot.ai/v1` |
+| [Kimi Code Console](https://www.kimi.com/code/console) | Membership quota | **Kimi For Coding (kimi.ai)** (`kimi-code-plan-global`) | `KIMI_API_KEY` | `https://api.kimi.ai/coding/v1` |
+
+### Moonshot AI (Kimi API Platform)
+
+**Verified by the author on November 20, 2026.** A request succeeded in OpenCode on macOS using a Platform key loaded from Keychain via `MOONSHOT_API_KEY` and a model selected under **Moonshot AI** in `/models`.
+
+Save the Platform key in Keychain as `opencode-moonshot`, then launch:
 
 ```bash
-oc-keychain "opencode-kimi" MOONSHOT_API_KEY
+oc-keychain "opencode-moonshot" MOONSHOT_API_KEY
 ```
 
-Step 3. For interactive authentication choose Moonshot AI in `/connect` if listed; in env mode do not re-enter the key. Then select a model in `/models`. For manual configuration, use the endpoint and model ID from your Moonshot account. Kimi Coding Plan and standard API settings may differ.
+If the Platform key is already saved under `opencode-kimi`, pass that service name instead. In `/models`, select a model under **Moonshot AI**. Check the provider label when the same model name appears under multiple providers.
+
+### Kimi For Coding
+
+This setup uses the membership quota. The steps below follow Kimi’s documentation. [Kimi Code integration](https://www.kimi.com/code/docs/en/third-party-tools/opencode.html)
+
+Step 1. Create an API key in the [Kimi Code Console](https://www.kimi.com/code/console) and store it in Keychain as `opencode-kimi`.
+
+Step 2. Launch OpenCode and select **Kimi For Coding (kimi.ai)** in `/models`, or select the model at launch:
+
+```bash
+oc-keychain "opencode-kimi" KIMI_API_KEY --model kimi-code-plan-global/k3.1-pro
+```
+
+If you get an authentication error, run `oc-keychain "opencode-kimi" KIMI_API_KEY auth list`. An `environment` entry confirms OpenCode detected the variable. A `stored` account for the same provider takes priority. For Keychain-only use, remove that saved account in `/connect` and relaunch. [OpenCode authentication](https://opencode.ai/docs/cli/providers/#environment)
 
 ## 6. ChatGPT Plus / Pro and OpenAI API
 
@@ -265,7 +289,7 @@ function oc-deepseek {
 }
 ```
 
-Restart PowerShell and use `oc-deepseek`. For Z.ai and Kimi create separate `zai.xml` and `kimi.xml` files in the same way, and replace the variable with `ZAI_API_KEY` or `MOONSHOT_API_KEY` in separate functions. Variable names must match the OpenCode provider configuration.
+Restart PowerShell and use `oc-deepseek`. For Z.ai and Kimi create separate `zai.xml` and `kimi.xml` files in the same way, and replace the variable with `ZAI_API_KEY` or `KIMI_API_KEY` in separate functions. Variable names must match the OpenCode provider configuration.
 
 ## 10. Linux: OpenCode and secrets
 
@@ -304,7 +328,7 @@ oc-deepseek() (
 )
 ```
 
-Open a new terminal and run `oc-deepseek`. For Z.ai and Kimi use separate `provider zai` / `provider kimi` attributes and the matching variables. Secret Service needs a running session and unlocked keyring; on headless servers use a secret manager or interactive key entry at launch.
+Open a new terminal and run `oc-deepseek`. For Z.ai and Kimi use separate `provider zai` / `provider kimi` attributes with `ZAI_API_KEY` and `KIMI_API_KEY`, respectively. Secret Service needs a running session and unlocked keyring; on headless servers use a secret manager or interactive key entry at launch.
 
 ## 11. ChatGPT, VS Code and verification
 
@@ -342,15 +366,15 @@ V1 saves interactive credentials in `~/.local/share/opencode/auth.json`; use `op
 
 ## Sources and verification limits
 
-Official documentation reviewed on **November 18, 2026**. This is a source review, not verification of installation or paid API operation. The author's macOS verification with v2.3.0 on November 18, 2026 retains its original scope; it does not establish that every provider or command was tested. Windows/DPAPI and Linux/Secret Service were not executed on their target OS. Only shell functions with fake keys and stubs were tested on macOS. V1 was not run in this review environment.
+Official documentation reviewed on **November 18, 2026**. This is a source review, not verification of installation or paid API operation. The author's macOS verification with v2.3.0 on November 18, 2026 retains its original scope; it does not establish that every provider or command was tested. Windows/DPAPI and Linux/Secret Service were not executed on their target OS. Only shell functions with fake keys and stubs were tested on macOS. V1 was not run in this review environment. On November 20, 2026, the author also verified a successful request through Moonshot AI on macOS using a Platform key from Keychain.
 
 | API / plan | Endpoint and model at review time | Authentication and limits |
 | --- | --- | --- |
 | [DeepSeek API](https://api-docs.deepseek.com/) | `https://api.deepseek.com`, `deepseek-flash`; separate `/anthropic` for Claude Code | Bearer API key; [tool calls](https://api-docs.deepseek.com/guides/tool_calls/) documented, not tested here |
 | [Z.ai API](https://docs.z.ai/guides/overview/quick-start) | `https://api.z.ai/api/paas/v4`, `glm-5.3` | Standard API key; [function calling](https://docs.z.ai/guides/capabilities/function-calling) depends on the model |
 | [GLM Coding Plan](https://docs.z.ai/devpack/quick-start) | Chat Completions: `https://api.z.ai/api/coding/paas/v4` | Separate plan key; supported tools only. [OpenCode](https://docs.z.ai/devpack/tool/opencode): Z.AI Coding Plan provider |
-| [Kimi API](https://platform.kimi.ai/docs/get-your-api-key) | `https://api.moonshot.ai/v1`, `kimi-k3.1-pro` | Bearer API key; [tool calls](https://platform.kimi.ai/docs/guide/use-kimi-api-to-complete-tool-calls) documented. [Integration](https://platform.kimi.ai/docs/guide/open-code) based on V1 1.18.3: the source version, not a local test |
-| Kimi Coding Plan | Do not substitute the standard Moonshot API URL | This plan's settings and permissions are not confirmed here; use your plan's own official instructions |
+| [Kimi API](https://platform.kimi.ai/docs/get-your-api-key) | `https://api.moonshot.ai/v1`, `kimi-k3.1-pro` | Bearer API key; [tool calls](https://platform.kimi.ai/docs/guide/use-kimi-api-to-complete-tool-calls) documented. [Integration](https://platform.kimi.ai/docs/guide/open-code) based on V1 1.18.3: the source version, not a local test Author verified a request through the Moonshot AI provider on November 20, 2026. |
+| [Kimi For Coding (kimi.ai)](https://models.opencode.ai/providers/kimi-code-plan-global/) | `https://api.kimi.ai/coding/v1`, `k3.1-pro` | Kimi Code Console key via `KIMI_API_KEY` |
 | [OpenAI API](https://developers.openai.com/api/reference/overview) | `https://api.openai.com/v1`; model IDs from `/models` and your account | Bearer API key; [function calling](https://developers.openai.com/api/docs/guides/function-calling) depends on model. ChatGPT OAuth is a separate path described in [OpenCode V2](https://opencode.ai/docs/providers/#chatgpt) |
 
 V2 instructions were checked against [Install](https://opencode.ai/docs/#cli), [Config](https://opencode.ai/docs/config/), [Providers](https://opencode.ai/docs/providers/), [CLI](https://opencode.ai/docs/cli/), [CLI providers](https://opencode.ai/docs/cli/providers/) and [Troubleshooting](https://opencode.ai/docs/troubleshooting/). Before paid use, recheck model IDs, balance, regional eligibility and data terms.

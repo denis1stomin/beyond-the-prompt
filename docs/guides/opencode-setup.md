@@ -92,7 +92,7 @@ oc-keychain() (
 
 **Интерактивное подключение.** Вызовите `/connect`, выберите провайдера и пройдите вход по API-ключу или OAuth. Затем выберите модель в `/models`. V2 сохраняет ключи и токены OAuth в базе SQLite сервера (для локальной релизной сборки обычно `~/.local/share/opencode/opencode.db`). Локальный путь показывает `opencode debug paths db`. Удалите сохранённую запись через `/connect` или `opencode auth logout`. Отзыв ключа у провайдера и удаление из Keychain выполняются отдельно. Если нужен только ключ из окружения, пропустите интерактивный ввод. Не сохраняйте ключи в аргументах команд, истории, профиле оболочки, файлах `.env` или Git. [Хранилище V2](https://opencode.ai/docs/cli/providers/#storage)
 
-Чтобы явно связать переменные окружения с провайдерами из каталога, задайте `providers` в файле проекта `opencode.json`. Оставьте нужные записи. В примере используются ключи обычного API. Для вашего плана выбирайте соответствующего провайдера и настройки. [Провайдеры V2](https://opencode.ai/docs/providers/) · [Справочник по миграции](https://opencode.ai/docs/migrate-v1/#providers)
+Чтобы явно связать переменные окружения с провайдерами из каталога, задайте `providers` в файле проекта `opencode.json`. Оставьте нужные записи. Выберите запись для вашего ключа. OpenCode может подхватить поддерживаемые переменные окружения встроенных провайдеров без явной привязки. [Провайдеры V2](https://opencode.ai/docs/providers/) · [Справочник по миграции](https://opencode.ai/docs/migrate-v1/#providers)
 
 ```json
 {
@@ -100,6 +100,7 @@ oc-keychain() (
   "providers": {
     "deepseek": { "settings": { "apiKey": "{env:DEEPSEEK_API_KEY}" } },
     "zai": { "settings": { "apiKey": "{env:ZAI_API_KEY}" } },
+    "kimi-code-plan-global": { "settings": { "apiKey": "{env:KIMI_API_KEY}" } },
     "moonshotai": { "settings": { "apiKey": "{env:MOONSHOT_API_KEY}" } },
     "openai": { "settings": { "apiKey": "{env:OPENAI_API_KEY}" } }
   }
@@ -138,15 +139,38 @@ oc-keychain "opencode-zai" ZAI_API_KEY
 
 ## 5. Подключение Kimi / Moonshot
 
-Шаг 1. Создайте API-ключ в [Moonshot AI Platform](https://platform.moonshot.ai/) (доступность и регионы уточняйте у провайдера). Сохраните его в Keychain с именем `opencode-kimi`.
+Moonshot AI предлагает оба сервиса под брендом Kimi. Провайдера в OpenCode выбирайте по тому, где был создан ключ. [Официальное сравнение API](https://www.kimi.com/en/help/kimi-code/faq)
 
-Шаг 2. Запустите:
+| Где создан ключ | Оплата | Провайдер OpenCode | Переменная окружения | Глобальный адрес API |
+| --- | --- | --- | --- | --- |
+| [Kimi API Platform](https://platform.kimi.ai/console/api-keys) | По фактическому использованию | **Moonshot AI** (`moonshotai`) | `MOONSHOT_API_KEY` | `https://api.moonshot.ai/v1` |
+| [Консоль Kimi Code](https://www.kimi.com/code/console) | Квота подписки | **Kimi For Coding (kimi.ai)** (`kimi-code-plan-global`) | `KIMI_API_KEY` | `https://api.kimi.ai/coding/v1` |
+
+### Moonshot AI (Kimi API Platform)
+
+**Проверено автором 20 ноября 2026 года.** На macOS OpenCode успешно выполнил запрос с ключом Platform из Keychain, переданным через `MOONSHOT_API_KEY`. Модель выбрана в `/models` у провайдера **Moonshot AI**.
+
+Сохраните ключ Platform в Keychain под именем `opencode-moonshot`, затем запустите:
 
 ```bash
-oc-keychain "opencode-kimi" MOONSHOT_API_KEY
+oc-keychain "opencode-moonshot" MOONSHOT_API_KEY
 ```
 
-Шаг 3. Для интерактивного подключения выберите Moonshot AI в `/connect`, если он есть в списке; для env-режима не вводите ключ повторно. Затем выберите модель в `/models`. Для ручной настройки используйте endpoint и ID модели из кабинета Moonshot. Kimi Coding Plan и обычный API могут требовать разных настроек.
+Если ключ Platform уже сохранён под именем `opencode-kimi`, укажите это имя при запуске. В `/models` выберите модель у **Moonshot AI**. Если одинаковое название модели встречается у нескольких провайдеров, смотрите на подпись провайдера.
+
+### Kimi For Coding
+
+Этот вариант использует квоту подписки. Шаги ниже приведены по документации Kimi. [Интеграция Kimi Code](https://www.kimi.com/code/docs/en/third-party-tools/opencode.html)
+
+Шаг 1. Создайте API-ключ в [консоли Kimi Code](https://www.kimi.com/code/console) и сохраните его в Keychain под именем `opencode-kimi`.
+
+Шаг 2. Запустите OpenCode и выберите модель **Kimi For Coding (kimi.ai)** в `/models` либо укажите модель при запуске:
+
+```bash
+oc-keychain "opencode-kimi" KIMI_API_KEY --model kimi-code-plan-global/k3.1-pro
+```
+
+При ошибке авторизации выполните `oc-keychain "opencode-kimi" KIMI_API_KEY auth list`. Строка `environment` означает, что OpenCode обнаружил переменную. Запись `stored` для того же провайдера имеет приоритет. Чтобы использовать ключ из Keychain, удалите сохранённую учётную запись этого провайдера через `/connect` и перезапустите OpenCode. [Авторизация в OpenCode](https://opencode.ai/docs/cli/providers/#environment)
 
 ## 6. ChatGPT Plus / Pro и OpenAI API
 
@@ -252,7 +276,7 @@ function oc-deepseek {
 }
 ```
 
-Перезапустите PowerShell, затем используйте `oc-deepseek`. Для Z.ai и Kimi создайте отдельные файлы `zai.xml` и `kimi.xml` по той же схеме и замените имя переменной на `ZAI_API_KEY` либо `MOONSHOT_API_KEY` в отдельных функциях. Имена переменных должны совпадать с конфигурацией провайдера в OpenCode.
+Перезапустите PowerShell, затем используйте `oc-deepseek`. Для Z.ai и Kimi создайте отдельные файлы `zai.xml` и `kimi.xml` по той же схеме и замените имя переменной на `ZAI_API_KEY` либо `KIMI_API_KEY` в отдельных функциях. Имена переменных должны совпадать с конфигурацией провайдера в OpenCode.
 
 ## 10. Linux: OpenCode и секреты
 
@@ -291,7 +315,7 @@ oc-deepseek() (
 )
 ```
 
-После открытия нового терминала выполните `oc-deepseek`. Для Z.ai и Kimi используйте отдельные атрибуты `provider zai` и `provider kimi` и соответствующие переменные окружения. Secret Service требует работающего сеанса/разблокированного keyring; на headless-сервере удобнее использовать менеджер секретов либо интерактивный ввод ключа при запуске.
+После открытия нового терминала выполните `oc-deepseek`. Для Z.ai и Kimi используйте отдельные атрибуты `provider zai` и `provider kimi` с переменными `ZAI_API_KEY` и `KIMI_API_KEY` соответственно. Secret Service требует работающего сеанса/разблокированного keyring; на headless-сервере удобнее использовать менеджер секретов либо интерактивный ввод ключа при запуске.
 
 ## 11. ChatGPT, VS Code и проверка {#_13-chatgpt-vs-code-и-проверка}
 
@@ -329,15 +353,15 @@ V1 сохраняет учётные данные интерактивного �
 
 ## Источники и границы проверки
 
-Официальная документация просмотрена **18 ноября 2026 года**. Это проверка источников, не подтверждение успешной установки или работы платных API. Подход с v2.3.0 на macOS проверен автором 18.11.2026 в исходном объёме; это не означает проверки каждого провайдера или команды. Windows/DPAPI и Linux/Secret Service на целевых ОС не исполнялись. Проверены только shell-функции с фиктивными ключами и заглушками на macOS. V1 в этом окружении не запускался.
+Официальная документация просмотрена **18 ноября 2026 года**. Это проверка источников, не подтверждение успешной установки или работы платных API. Подход с v2.3.0 на macOS проверен автором 18.11.2026 в исходном объёме; это не означает проверки каждого провайдера или команды. Windows/DPAPI и Linux/Secret Service на целевых ОС не исполнялись. Проверены только shell-функции с фиктивными ключами и заглушками на macOS. V1 в этом окружении не запускался. 20 ноября 2026 года автор также проверил успешный запрос через Moonshot AI на macOS с ключом Platform из Keychain.
 
 | API / план | Endpoint и модель на дату просмотра | Авторизация и ограничения |
 | --- | --- | --- |
 | [DeepSeek API](https://api-docs.deepseek.com/) | `https://api.deepseek.com`, `deepseek-flash`; для Claude Code отдельный `/anthropic` | Bearer API key; [tool calls](https://api-docs.deepseek.com/guides/tool_calls/) документированы, но здесь не тестировались |
 | [Z.ai API](https://docs.z.ai/guides/overview/quick-start) | `https://api.z.ai/api/paas/v4`, `glm-5.3` | Standard API key; [function calling](https://docs.z.ai/guides/capabilities/function-calling) зависит от модели |
 | [GLM Coding Plan](https://docs.z.ai/devpack/quick-start) | Chat Completions: `https://api.z.ai/api/coding/paas/v4` | Отдельный ключ плана; только поддерживаемые инструменты. [OpenCode](https://docs.z.ai/devpack/tool/opencode): провайдер Z.AI Coding Plan |
-| [Kimi API](https://platform.kimi.ai/docs/get-your-api-key) | `https://api.moonshot.ai/v1`, `kimi-k3.1-pro` | Bearer API key; [tool calls](https://platform.kimi.ai/docs/guide/use-kimi-api-to-complete-tool-calls) документированы. [Интеграция](https://platform.kimi.ai/docs/guide/open-code) основана на V1 1.18.3; это версия источника, не локального теста |
-| Kimi Coding Plan | Не подставляйте URL обычного Moonshot API | Настройки и права этого плана здесь не подтверждены; используйте отдельную официальную инструкцию своего плана |
+| [Kimi API](https://platform.kimi.ai/docs/get-your-api-key) | `https://api.moonshot.ai/v1`, `kimi-k3.1-pro` | Bearer API key; [tool calls](https://platform.kimi.ai/docs/guide/use-kimi-api-to-complete-tool-calls) документированы. [Интеграция](https://platform.kimi.ai/docs/guide/open-code) основана на V1 1.18.3; это версия источника, не локального теста Автор проверил запрос через провайдера Moonshot AI 20 ноября 2026 года. |
+| [Kimi For Coding (kimi.ai)](https://models.opencode.ai/providers/kimi-code-plan-global/) | `https://api.kimi.ai/coding/v1`, `k3.1-pro` | Ключ из консоли Kimi Code через `KIMI_API_KEY` |
 | [OpenAI API](https://developers.openai.com/api/reference/overview) | `https://api.openai.com/v1`; ID из `/models` и кабинета | Bearer API key; [function calling](https://developers.openai.com/api/docs/guides/function-calling) зависит от модели. OAuth ChatGPT — отдельный путь, описанный в [OpenCode V2](https://opencode.ai/docs/providers/#chatgpt) |
 
 Инструкция для V2 сверена с разделами [установка](https://opencode.ai/docs/#cli), [конфигурация](https://opencode.ai/docs/config/), [провайдеры](https://opencode.ai/docs/providers/), [CLI](https://opencode.ai/docs/cli/), [вход через CLI](https://opencode.ai/docs/cli/providers/) и [диагностика](https://opencode.ai/docs/troubleshooting/). Перед платным запуском проверьте ID моделей, баланс, доступность в регионе и условия обработки данных.
