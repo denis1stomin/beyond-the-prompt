@@ -132,19 +132,23 @@ If the provider is not detected automatically, follow the [custom provider guide
 
 ## 4. Connect Z.ai / GLM
 
-Step 1. Open [Z.ai](https://z.ai/) and establish whether you have a standard token-billed API or a Coding Plan. Billing and sometimes endpoints differ.
+### Standard Z.ai API
 
-Step 2. Create a key and save it in Keychain as `opencode-zai`.
+**Verified by the author on macOS on November 20, 2026.** OpenCode returned a response from **GLM-4.7-Flash** using a Z.ai API key loaded from Keychain. Z.ai lists this model as free. [Z.ai API pricing](https://docs.z.ai/guides/overview/pricing)
 
-Step 3. Run:
+1. Create a key on the [Z.ai API key page](https://z.ai/manage-apikey/apikey-list) and save it in Keychain as `opencode-zai`.
+2. Include the `zai` entry from the V2 config example above. Its `settings.apiKey` reads `{env:ZAI_API_KEY}`, so pass `ZAI_API_KEY` to the wrapper.
+3. Launch OpenCode:
 
-```bash
-oc-keychain "opencode-zai" ZAI_API_KEY
-```
+   ```bash
+   oc-keychain "opencode-zai" ZAI_API_KEY
+   ```
 
-Step 4. For interactive authentication, choose the entry for your plan if it is listed. Z.ai documents a separate **Z.AI Coding Plan** provider. Do not re-enter the key in env mode. Choose a GLM model in `/models`. For manual endpoints, use the documentation for your exact plan: do not mix Coding Plan and standard API settings.
+4. Open `/models`, choose **GLM-4.7-Flash** under **Z.AI**, and send a short prompt. The standard API model ID is `zai/glm-4.7-flash`. **GLM-4.7-FlashX** is a separate paid model.
 
-Documentation: [docs.z.ai](https://docs.z.ai/).
+### Z.AI Coding Plan
+
+The subscription uses a separate **Z.AI Coding Plan** provider. If you have that subscription, use the provider and endpoint in Z.ai’s [OpenCode integration guide](https://docs.z.ai/devpack/tool/opencode).
 
 ## 5. Connect Kimi / Moonshot
 
@@ -371,7 +375,7 @@ Official documentation reviewed on **November 18, 2026**. This is a source revie
 | API / plan | Endpoint and model at review time | Authentication and limits |
 | --- | --- | --- |
 | [DeepSeek API](https://api-docs.deepseek.com/) | `https://api.deepseek.com`, `deepseek-flash`; separate `/anthropic` for Claude Code | Bearer API key; [tool calls](https://api-docs.deepseek.com/guides/tool_calls/) documented, not tested here |
-| [Z.ai API](https://docs.z.ai/guides/overview/quick-start) | `https://api.z.ai/api/paas/v4`, `glm-5.3` | Standard API key; [function calling](https://docs.z.ai/guides/capabilities/function-calling) depends on the model |
+| [Z.ai API](https://docs.z.ai/guides/overview/quick-start) | `https://api.z.ai/api/paas/v4`, `glm-5.3` | Standard API key; [function calling](https://docs.z.ai/guides/capabilities/function-calling) depends on the model Author verified GLM-4.7-Flash through the standard API on macOS on November 20, 2026. |
 | [GLM Coding Plan](https://docs.z.ai/devpack/quick-start) | Chat Completions: `https://api.z.ai/api/coding/paas/v4` | Separate plan key; supported tools only. [OpenCode](https://docs.z.ai/devpack/tool/opencode): Z.AI Coding Plan provider |
 | [Kimi API](https://platform.kimi.ai/docs/get-your-api-key) | `https://api.moonshot.ai/v1`, `kimi-k3.1-pro` | Bearer API key; [tool calls](https://platform.kimi.ai/docs/guide/use-kimi-api-to-complete-tool-calls) documented. [Integration](https://platform.kimi.ai/docs/guide/open-code) based on V1 1.18.3: the source version, not a local test Author verified a request through the Moonshot AI provider on November 20, 2026. |
 | [Kimi For Coding (kimi.ai)](https://models.opencode.ai/providers/kimi-code-plan-global/) | `https://api.kimi.ai/coding/v1`, `k3.1-pro` | Kimi Code Console key via `KIMI_API_KEY` |
